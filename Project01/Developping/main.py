@@ -3,11 +3,23 @@ import numpy as np
 import random
 from Project01.proj import AI, directions
 
-TRAINING_RATE = 15
-
+LOAD_SWITCH = True
+LOOP_TIME = 5
+VARY_RATE = 0.4
+VARY_STEP = 15
 list_size = 20
-out_size = 10
+hold_size = 10
+
 board_list = []
+
+pre_board = np.array([[-1, -1, -1, -1, -1, -1, -1, -1],
+                      [-1, -1, -1, -1, -1, -1, -1, -1],
+                      [-1, -1, -1, -1, -1, -1, -1, -1],
+                      [-1, -1, -1, -1, -1, -1, -1, -1],
+                      [-1, -1, -1, -1, -1, -1, -1, -1],
+                      [-1, -1, -1, -1, -1, -1, -1, -1],
+                      [-1, -1, -1, -1, -1, -1, -1, -1],
+                      [-1, -1, -1, -1, -1, -1, -1, -1]])
 
 
 class BoardStore(object):
@@ -20,6 +32,10 @@ class BoardStore(object):
         self.board = board
         self.play_cnt = 0
         self.win_cnt = 0
+
+
+def win_rate(bs):
+    return bs.win_cnt / bs.play_cnt
 
 
 def save_board(board):
@@ -37,16 +53,28 @@ def save_information(board, loop, change):
         file.write("best board changed\n")
     else:
         file.write("best board unchanged\n")
-    file.write(str(board) + "\n\n")
+    file.write("it wins with winning rate " + str(win_rate(board)) + "\n")
+    file.write(str(board.board) + "\n\n")
     file.close()
 
 
-def generate_new_board(board):
-    new_board = np.array(board)
+def mix(b1, b2):
+    board = np.zeros((8, 8))
     for i in range(8):
         for j in range(8):
-            new_board[i][j] += random.random() * TRAINING_RATE - TRAINING_RATE / 2
-    return new_board
+            if random.random() <= 0.5:
+                board[i][j] = b1[i][j]
+            else:
+                board[i][j] = b2[i][j]
+    return board
+
+
+def vary(board, rate=VARY_RATE, step=VARY_STEP):
+    for i in range(8):
+        for j in range(8):
+            if random.random() < rate:
+                board[i][j] += random.random() * step - step / 2
+    return board
 
 
 def judge(chessboard):
@@ -99,20 +127,55 @@ def compete(white_player, black_player, white_own, black_own):
             cur = black_player
     win_flag = judge(chessboard)
     if win_flag == 1:
-        return 1
+        white_own.win_cnt += 1
+    elif win_flag == -1:
+        black_own.win_cnt += 1
 
 
 
 
 def main():
-    board = load_board()
+    board = np.array(pre_board)
+    if LOAD_SWITCH:
+        board = load_board()
     board_list.append(BoardStore(board))
     for i in range(list_size - 1):
-        board_list.append(BoardStore(generate_new_board(board)))
-    for i in range(list_size):
-        for j in range(list_size - 1 - i):
-            white_player = AI(8, 1, 5.5, score_board_1=board_list[i].board)
-            black_player = AI(8, -1, 5.5, score_board_1=board_list[j].board)
+        nb = np.array(board)
+        board_list.append(BoardStore(vary(nb, rate=0.75)))
+
+    for rcnt in range(LOOP_TIME):
+        host_board = board_list[0]
+        print("loop " + str(rcnt + 1) + " began")
+        # compete
+        for i in range(list_size):
+            if i == list_size - 1:
+                break
+            for j in range(i + 1, list_size):
+                print("race between " + str(i) + " and " + str(j) + " began")
+                white_player = AI(8, 1, 5, start_dep=4, score_board_1=board_list[i].board)
+                black_player = AI(8, -1, 5, start_dep=4, score_board_1=board_list[j].board)
+                compete(white_player, black_player, board_list[i], board_list[j])
+                white_player = AI(8, 1, 5, start_dep=4, score_board_1=board_list[j].board)
+                black_player = AI(8, -1, 5, start_dep=4, score_board_1=board_list[i].board)
+                compete(white_player, black_player, board_list[j], board_list[i])
+                print("race between " + str(i) + " and " + str(j) + " finished")
+
+        # save information
+        board_list.sort(key=win_rate, reverse=True)
+        for b in board_list:
+            print(win_rate(b))
+        save_board(board_list[0].board)
+        save_information(board_list[0], rcnt + 1, host_board == board_list[0])
+        print("loop " + str(rcnt + 1) + " finished")
+        ncnt = hold_size
+        for i in range(5):
+            for j in range(i + 1, 5):
+                board_list[ncnt] = vary(mix(board_list[i].board, board_list[j].board))
+                ncnt += 1
+                if ncnt == list_size:
+                    break
+            if ncnt == list_size:
+                break
 
 
 

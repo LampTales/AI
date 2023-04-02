@@ -52,7 +52,7 @@ random.seed(0)
 # don't change the class name
 class AI(object):
     # chessboard_size, color, time_out passed from agent
-    def __init__(self, chessboard_size, color, time_out, dep=5, score_board_1=sample, score_board_2=pos_table):
+    def __init__(self, chessboard_size, color, time_out, start_dep=4, score_board_1=sample, score_board_2=pos_table):
         self.chessboard_size = chessboard_size
         # You are white or black
         self.color = color
@@ -62,7 +62,7 @@ class AI(object):
         self.candidate_list = []
         # my finish counter
         self.REST = 64
-        self.DEPTH = dep
+        self.DEPTH = start_dep
         self.begin_time = 0
         self.score_board_1 = score_board_1
         self.score_board_2 = score_board_2
@@ -75,9 +75,18 @@ class AI(object):
         # Write your algorithm here
         # Here is the simplest sample:Random decision
         self.find_legal(chessboard)
-        _, spot = self.cal_max(chessboard, -10000, 10000, self.DEPTH)
-        if spot != (-1, -1):
-            self.candidate_list.append(spot)
+        if len(self.candidate_list) == 0:
+            return
+        dep = self.DEPTH
+        while True:
+            _, spot, terminate = self.cal_max(chessboard, -1000000, 1000000, dep)
+            if terminate or dep > self.REST:
+                # print("reach dep ", dep - 1)
+                break
+            else:
+                if spot != (-1, -1):
+                    self.candidate_list.append(spot)
+                dep += 1
 
         # ==============Find new pos========================================
         # Make sure that the position of your decision on the chess board is empty.
@@ -154,13 +163,13 @@ class AI(object):
     def cal_max(self, chessboard, alpha, beta, step_cnt):
         spots = self.get_spots(chessboard, self.color)
         if step_cnt == 0 or len(spots) == 0:
-            return self.get_score(chessboard), (-1, -1)
+            return self.get_score(chessboard), (-1, -1), False
 
-        total_max = -10000
+        total_max = -1000000
         total_spot = spots[0]
         for spot in spots:
             board = self.flip_over(chessboard, spot, self.color)
-            cur_val, _ = self.cal_min(board, alpha, beta, step_cnt - 1)
+            cur_val, _, _ = self.cal_min(board, alpha, beta, step_cnt - 1)
             if cur_val > total_max:
                 total_max, total_spot = cur_val, spot
             if total_max >= beta:
@@ -168,19 +177,19 @@ class AI(object):
             if total_max > alpha:
                 alpha = total_max
             if time.time() - self.begin_time > self.time_out - 0.1:
-                break
-        return total_max, total_spot
+                return total_max, total_spot, True
+        return total_max, total_spot, False
 
     def cal_min(self, chessboard, alpha, beta, step_cnt):
         spots = self.get_spots(chessboard, -self.color)
         if step_cnt == 0 or len(spots) == 0:
-            return self.get_score(chessboard), (-1, -1)
+            return self.get_score(chessboard), (-1, -1), False
 
-        total_min = 10000
+        total_min = 1000000
         total_spot = spots[0]
         for spot in spots:
             board = self.flip_over(chessboard, spot, -self.color)
-            cur_val, _ = self.cal_max(board, alpha, beta, step_cnt - 1)
+            cur_val, _, _ = self.cal_max(board, alpha, beta, step_cnt - 1)
             if cur_val < total_min:
                 total_min, total_spot = cur_val, spot
             if total_min <= alpha:
@@ -188,8 +197,8 @@ class AI(object):
             if total_min < beta:
                 beta = total_min
             if time.time() - self.begin_time > 4.9:
-                break
-        return total_min, total_spot
+                return total_min, total_spot, True
+        return total_min, total_spot, False
 
     def get_score(self, chessboard):
         if self.REST > SWITCH_DEPTH:

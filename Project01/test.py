@@ -9,15 +9,19 @@ chessboard[4][4] = 1
 chessboard[3][4] = -1
 chessboard[4][3] = -1
 print(chessboard)
-p1 = AI(8, -1, 5, 5)
-p2 = AI(8, 1, 5, 1)
-cur = p1
+p1 = AI(8, 1, 5, 5)
+p2 = AI(8, -1, 5, 1)
+cur = p2
 while legal_left(chessboard):
     cur.go(chessboard)
     if len(cur.candidate_list) != 0:
         chessboard = cur.flip_over(chessboard, cur.candidate_list[-1], cur.color)
     else:
-        break
+        if cur == p1:
+            cur = p2
+        else:
+            cur = p1
+        continue
     print("player color: " + str(cur.color) + " , choose spot: " + str(cur.candidate_list[-1]) + " , and get: " + str(cur.get_score(chessboard)))
     print(chessboard)
     if cur == p1:
