@@ -4,22 +4,24 @@ import random
 from Project01.proj import AI, directions
 
 LOAD_SWITCH = True
-LOOP_TIME = 5
+LOOP_TIME = 10
 VARY_RATE = 0.4
 VARY_STEP = 15
+TIME_OUT = 0.6
+START_DEPTH = 1
 list_size = 20
 hold_size = 10
 
 board_list = []
 
-pre_board = np.array([[-1, -1, -1, -1, -1, -1, -1, -1],
-                      [-1, -1, -1, -1, -1, -1, -1, -1],
-                      [-1, -1, -1, -1, -1, -1, -1, -1],
-                      [-1, -1, -1, -1, -1, -1, -1, -1],
-                      [-1, -1, -1, -1, -1, -1, -1, -1],
-                      [-1, -1, -1, -1, -1, -1, -1, -1],
-                      [-1, -1, -1, -1, -1, -1, -1, -1],
-                      [-1, -1, -1, -1, -1, -1, -1, -1]])
+pre_board = np.array([[-50, 10, -20, -10, -10, -20, 10, -50],
+                   [25, 45, -1, -1, -1, -1, 45, 25],
+                   [-20, -1, -3, -2, -2, -3, -1, -20],
+                   [-10, -1, -2, -1, -1, -2, -1, -10],
+                   [-10, -1, -2, -1, -1, -2, -1, -10],
+                   [-20, -1, -3, -2, -2, -3, -1, -20],
+                   [25, 45, -1, -1, -1, -1, 45, 25],
+                   [-50, 10, -20, -10, -10, -20, 10, -50]])
 
 
 class BoardStore(object):
@@ -30,6 +32,10 @@ class BoardStore(object):
 
     def reset(self, board):
         self.board = board
+        self.play_cnt = 0
+        self.win_cnt = 0
+
+    def fresh(self):
         self.play_cnt = 0
         self.win_cnt = 0
 
@@ -152,11 +158,11 @@ def main():
                 break
             for j in range(i + 1, list_size):
                 print("race between " + str(i) + " and " + str(j) + " began")
-                white_player = AI(8, 1, 5, start_dep=4, score_board_1=board_list[i].board)
-                black_player = AI(8, -1, 5, start_dep=4, score_board_1=board_list[j].board)
+                white_player = AI(8, 1, TIME_OUT, start_dep=START_DEPTH, score_board_1=board_list[i].board, max_dep=1)
+                black_player = AI(8, -1, TIME_OUT, start_dep=START_DEPTH, score_board_1=board_list[j].board, max_dep=1)
                 compete(white_player, black_player, board_list[i], board_list[j])
-                white_player = AI(8, 1, 5, start_dep=4, score_board_1=board_list[j].board)
-                black_player = AI(8, -1, 5, start_dep=4, score_board_1=board_list[i].board)
+                white_player = AI(8, 1, TIME_OUT, start_dep=START_DEPTH, score_board_1=board_list[j].board, max_dep=1)
+                black_player = AI(8, -1, TIME_OUT, start_dep=START_DEPTH, score_board_1=board_list[i].board, max_dep=1)
                 compete(white_player, black_player, board_list[j], board_list[i])
                 print("race between " + str(i) + " and " + str(j) + " finished")
 
@@ -165,17 +171,19 @@ def main():
         for b in board_list:
             print(win_rate(b))
         save_board(board_list[0].board)
-        save_information(board_list[0], rcnt + 1, host_board == board_list[0])
+        save_information(board_list[0], rcnt + 1, host_board != board_list[0])
         print("loop " + str(rcnt + 1) + " finished")
         ncnt = hold_size
         for i in range(5):
             for j in range(i + 1, 5):
-                board_list[ncnt] = vary(mix(board_list[i].board, board_list[j].board))
+                board_list[ncnt].reset(vary(mix(board_list[i].board, board_list[j].board)))
                 ncnt += 1
                 if ncnt == list_size:
                     break
             if ncnt == list_size:
                 break
+        for i in range(10):
+            board_list[i].fresh()
 
 
 

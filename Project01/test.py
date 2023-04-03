@@ -9,8 +9,8 @@ chessboard[4][4] = 1
 chessboard[3][4] = -1
 chessboard[4][3] = -1
 print(chessboard)
-p1 = AI(8, 1, 5, 5)
-p2 = AI(8, -1, 5, 1)
+p1 = AI(8, 1, 5, )
+p2 = AI(8, -1, 5, )
 cur = p2
 while legal_left(chessboard):
     cur.go(chessboard)

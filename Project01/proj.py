@@ -45,14 +45,14 @@ sample = np.array([[-500, 25, -20, -10, -10, -20, 25, -500],
                    [25, 45, -1, -1, -1, -1, 45, 25],
                    [-500, 25, -20, -10, -10, -20, 25, -500]])
 
-SWITCH_DEPTH = 5
+
 random.seed(0)
 
 
 # don't change the class name
 class AI(object):
     # chessboard_size, color, time_out passed from agent
-    def __init__(self, chessboard_size, color, time_out, start_dep=4, score_board_1=sample, score_board_2=pos_table):
+    def __init__(self, chessboard_size, color, time_out, start_dep=4, score_board_1=sample, score_board_2=pos_table, max_dep=100):
         self.chessboard_size = chessboard_size
         # You are white or black
         self.color = color
@@ -66,6 +66,8 @@ class AI(object):
         self.begin_time = 0
         self.score_board_1 = score_board_1
         self.score_board_2 = score_board_2
+        self.max_dep = max_dep
+        self.SWITCH_DEPTH = 1
 
     # The input is the current chessboard. Chessboard is a numpy array.
     def go(self, chessboard):
@@ -80,7 +82,7 @@ class AI(object):
         dep = self.DEPTH
         while True:
             _, spot, terminate = self.cal_max(chessboard, -1000000, 1000000, dep)
-            if terminate or dep > self.REST:
+            if terminate or dep > self.REST or dep > self.max_dep:
                 # print("reach dep ", dep - 1)
                 break
             else:
@@ -196,12 +198,12 @@ class AI(object):
                 break
             if total_min < beta:
                 beta = total_min
-            if time.time() - self.begin_time > 4.9:
+            if time.time() - self.begin_time > self.time_out - 0.1:
                 return total_min, total_spot, True
         return total_min, total_spot, False
 
     def get_score(self, chessboard):
-        if self.REST > SWITCH_DEPTH:
+        if self.REST > self.SWITCH_DEPTH:
             return np.sum(self.color * chessboard * self.score_board_1)
         else:
             return np.sum(self.color * chessboard * self.score_board_2)
