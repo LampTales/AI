@@ -64,6 +64,12 @@ def save_information(board, loop, change):
     file.close()
 
 
+def clean_information():
+    file = open("save.txt", 'w')
+    file.truncate(0)
+    file.close()
+
+
 def mix(b1, b2):
     board = np.zeros((8, 8))
     for i in range(8):
@@ -148,7 +154,7 @@ def main():
     for i in range(list_size - 1):
         nb = np.array(board)
         board_list.append(BoardStore(vary(nb, rate=0.75)))
-
+    clean_information()
     for rcnt in range(LOOP_TIME):
         host_board = board_list[0]
         print("loop " + str(rcnt + 1) + " began")
