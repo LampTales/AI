@@ -1,10 +1,9 @@
-import numpy
 import numpy as np
 import random
 from Project01.proj import AI, directions
 
 LOAD_SWITCH = True
-LOOP_TIME = 10
+LOOP_TIME = 200
 VARY_RATE = 0.4
 VARY_STEP = 15
 TIME_OUT = 0.6
@@ -49,7 +48,7 @@ def save_board(board):
 
 
 def load_board():
-    return numpy.loadtxt("board.txt")
+    return np.loadtxt("board.txt")
 
 
 def save_information(board, loop, change):
