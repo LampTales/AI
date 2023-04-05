@@ -36,14 +36,14 @@ pos_table = np.array([[-1, -1, -1, -1, -1, -1, -1, -1],
                       [-1, -1, -1, -1, -1, -1, -1, -1],
                       [-1, -1, -1, -1, -1, -1, -1, -1]])
 
-sample = np.array([[-500, 25, -20, -10, -10, -20, 25, -500],
+sample = np.array([[-100, 25, -20, -10, -10, -20, 25, -100],
                    [25, 45, -1, -1, -1, -1, 45, 25],
                    [-20, -1, -3, -2, -2, -3, -1, -20],
                    [-10, -1, -2, -1, -1, -2, -1, -10],
                    [-10, -1, -2, -1, -1, -2, -1, -10],
                    [-20, -1, -3, -2, -2, -3, -1, -20],
                    [25, 45, -1, -1, -1, -1, 45, 25],
-                   [-500, 25, -20, -10, -10, -20, 25, -500]])
+                   [-100, 25, -20, -10, -10, -20, 25, -100]])
 
 SWITCH_DEPTH = 5
 random.seed(0)
@@ -52,7 +52,7 @@ random.seed(0)
 # don't change the class name
 class AI(object):
     # chessboard_size, color, time_out passed from agent
-    def __init__(self, chessboard_size, color, time_out, start_dep=4, score_board_1=sample, score_board_2=pos_table):
+    def __init__(self, chessboard_size, color, time_out, start_dep=4, score_board_1=sample):
         self.chessboard_size = chessboard_size
         # You are white or black
         self.color = color
@@ -65,7 +65,7 @@ class AI(object):
         self.DEPTH = start_dep
         self.begin_time = 0
         self.score_board_1 = score_board_1
-        self.score_board_2 = score_board_2
+        self.dep = self.DEPTH
 
     # The input is the current chessboard. Chessboard is a numpy array.
     def go(self, chessboard):
@@ -78,14 +78,14 @@ class AI(object):
         if len(self.candidate_list) == 0:
             return
         spot = self.candidate_list[-1]
-        dep = self.DEPTH
+        self.dep = self.DEPTH
         while True:
-            _, temp, terminate = self.cal_max(chessboard, -1000000, 1000000, dep)
-            if terminate or dep > self.REST:
+            _, temp, terminate = self.cal_max(chessboard, -1000000, 1000000, self.dep)
+            if terminate or self.dep > self.REST:
                 # print("reach dep ", dep - 1)
                 break
             else:
-                dep += 1
+                self.dep += 1
                 spot = temp
 
         if spot != (-1, -1):
@@ -204,9 +204,15 @@ class AI(object):
         return total_min, total_spot, False
 
     def get_score(self, chessboard):
-        if self.REST > SWITCH_DEPTH:
+        if self.REST > self.dep:
             return np.sum(self.color * chessboard * self.score_board_1)
         else:
-            return np.sum(self.color * chessboard * self.score_board_2)
+            ans = np.sum(chessboard)
+            if ans > 0:
+                return -1 * self.color
+            elif ans < 0:
+                return self.color
+            else:
+                return 0
 
 
