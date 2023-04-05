@@ -9,6 +9,9 @@ COLOR_NONE = 0
 
 directions = [(0, -1), (0, 1), (-1, 0), (1, 0), (-1, -1), (-1, 1), (1, -1), (1, 1)]
 static_score = -10
+avai_score = -5
+STATIC_DEPTH = 32
+SWITCH_DEPTH = 5
 score_table = np.array([[1, 8, 3, 7, 7, 3, 8, 1],
                         [8, 3, 2, 5, 5, 2, 3, 8],
                         [3, 2, 6, 6, 6, 6, 2, 3],
@@ -36,23 +39,23 @@ pos_table = np.array([[-1, -1, -1, -1, -1, -1, -1, -1],
                       [-1, -1, -1, -1, -1, -1, -1, -1],
                       [-1, -1, -1, -1, -1, -1, -1, -1]])
 
-sample = np.array([[-100, 25, -20, -10, -10, -20, 25, -100],
+sample = np.array([[-200, 25, -100, -60, -60, -100, 25, -200],
                    [25, 45, -1, -1, -1, -1, 45, 25],
-                   [-20, -1, -3, -2, -2, -3, -1, -20],
-                   [-10, -1, -2, -1, -1, -2, -1, -10],
-                   [-10, -1, -2, -1, -1, -2, -1, -10],
-                   [-20, -1, -3, -2, -2, -3, -1, -20],
+                   [-100, -1, -3, -2, -2, -3, -1, -100],
+                   [-60, -1, -2, -1, -1, -2, -1, -60],
+                   [-60, -1, -2, -1, -1, -2, -1, -60],
+                   [-100, -1, -3, -2, -2, -3, -1, -100],
                    [25, 45, -1, -1, -1, -1, 45, 25],
-                   [-100, 25, -20, -10, -10, -20, 25, -100]])
+                   [-200, 25, -100, -60, -60, -100, 25, -200]])
 
-SWITCH_DEPTH = 5
+
 random.seed(0)
 
 
 # don't change the class name
 class AI(object):
     # chessboard_size, color, time_out passed from agent
-    def __init__(self, chessboard_size, color, time_out, start_dep=4, score_board_1=sample):
+    def __init__(self, chessboard_size, color, time_out, start_dep=3, score_board_1=sample):
         self.chessboard_size = chessboard_size
         # You are white or black
         self.color = color
@@ -77,19 +80,18 @@ class AI(object):
         self.find_legal(chessboard)
         if len(self.candidate_list) == 0:
             return
-        spot = self.candidate_list[-1]
         self.dep = self.DEPTH
         while True:
-            _, temp, terminate = self.cal_max(chessboard, -1000000, 1000000, self.dep)
+            _, spot, terminate = self.cal_max(chessboard, -1000000, 1000000, self.dep)
             if terminate or self.dep > self.REST:
                 # print("reach dep ", dep - 1)
                 break
             else:
+                if spot != (-1, -1):
+                    self.candidate_list.append(spot)
                 self.dep += 1
-                spot = temp
 
-        if spot != (-1, -1):
-            self.candidate_list.append(spot)
+
 
         # ==============Find new pos========================================
         # Make sure that the position of your decision on the chess board is empty.
@@ -199,20 +201,35 @@ class AI(object):
                 break
             if total_min < beta:
                 beta = total_min
-            if time.time() - self.begin_time > 4.9:
+            if time.time() - self.begin_time > self.time_out - 0.1:
                 return total_min, total_spot, True
         return total_min, total_spot, False
 
     def get_score(self, chessboard):
         if self.REST > self.dep:
-            return np.sum(self.color * chessboard * self.score_board_1)
+            avi = len(self.get_spots(chessboard, -self.color))
+            sta = 0
+            # if self.REST < 64 - STATIC_DEPTH:
+            #     sta = self.get_static(chessboard, self.color)
+            return np.sum(self.color * chessboard * self.score_board_1) + avi * avai_score + sta * static_score
         else:
-            ans = np.sum(chessboard)
-            if ans > 0:
-                return -1 * self.color
-            elif ans < 0:
-                return self.color
-            else:
-                return 0
+            return - (self.color * np.sum(chessboard))
+
+    def get_static(self, chessboard, color):
+        ans = 0
+        if chessboard[0][0] == 0 and chessboard[0][7] == 0 and chessboard[7][0] == 0 and chessboard[7][7] == 0:
+            return 0
+        if chessboard[0][0] != 0 and chessboard[0][7] != 0:
+            for i in range(8):
+                ans += chessboard[0][i]
+        if chessboard[0][0] != 0 and chessboard[7][0] != 0:
+            for i in range(8):
+                ans += chessboard[i][0]
+        if chessboard[7][0] != 0 and chessboard[7][7] != 0:
+            for i in range(8):
+                ans += chessboard[7][i]
+        if chessboard[0][7] != 0 and chessboard[7][7] != 0:
+            for i in range(8):
+                ans += chessboard[i][7]
 
 

@@ -3,7 +3,7 @@ import random
 from Project01.proj import AI, directions
 
 LOAD_SWITCH = True
-LOOP_TIME = 200
+LOOP_TIME = 500
 VARY_RATE = 0.4
 VARY_STEP = 15
 TIME_OUT = 0.6
