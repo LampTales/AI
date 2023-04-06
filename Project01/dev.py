@@ -9,7 +9,8 @@ COLOR_NONE = 0
 
 directions = [(0, -1), (0, 1), (-1, 0), (1, 0), (-1, -1), (-1, 1), (1, -1), (1, 1)]
 half_dirs = [(1, 0), (0, 1), (1, -1), (1, 1)]
-static_score = -3
+static_score_pre = -2
+static_score = -10
 avai_score = -10
 STATIC_DEPTH = 32
 SWITCH_DEPTH = 5
@@ -40,14 +41,14 @@ pos_table = np.array([[-1, -1, -1, -1, -1, -1, -1, -1],
                       [-1, -1, -1, -1, -1, -1, -1, -1],
                       [-1, -1, -1, -1, -1, -1, -1, -1]])
 
-sample = np.array([[-300, 25, -100, -50, -50, -100, 25, -300],
+sample = np.array([[-200, 25, -100, -20, -20, -100, 25, -200],
                    [25, 45, -1, -1, -1, -1, 45, 25],
                    [-100, -1, -3, -2, -2, -3, -1, -100],
-                   [-50, -1, -2, -1, -1, -2, -1, -50],
-                   [-50, -1, -2, -1, -1, -2, -1, -50],
+                   [-20, -1, -2, -1, -1, -2, -1, -20],
+                   [-20, -1, -2, -1, -1, -2, -1, -20],
                    [-100, -1, -3, -2, -2, -3, -1, -100],
                    [25, 45, -1, -1, -1, -1, 45, 25],
-                   [-300, 25, -100, -50, -50, -100, 25, -300]])
+                   [-200, 25, -100, -20, -20, -100, 25, -200]])
 
 
 random.seed(0)
@@ -214,16 +215,17 @@ class AI(object):
             else:
                 avi = len(self.get_spots(chessboard, -self.color))
             sta = 0
-            # if self.REST < 64 - STATIC_DEPTH:
-            #     sta = self.get_static(chessboard)
-            return self.color * np.sum(chessboard * self.score_board_1) + avi * avai_score + sta * static_score
+            sta = self.get_static_pre(chessboard)
+            return self.color * np.sum(chessboard * self.score_board_1) + avi * avai_score + sta * static_score_pre
         else:
             return -self.color * np.sum(chessboard)
 
-    def get_static(self, chessboard):
+    # the early version of finding static spots, probably a piece of ****
+    def get_static_pre(self, chessboard):
         static_board = np.zeros((8, 8))
-        if chessboard[0][0] == 0 and chessboard[0][7] == 0 and chessboard[7][0] == 0 and chessboard[7][7] == 0:
-            return 0
+        # if chessboard[0][0] == 0 and chessboard[0][7] == 0 and chessboard[7][0] == 0 and chessboard[7][7] == 0:
+        #     return 0
+
         for i in range(8):
             for j in range(8):
                 c = chessboard[i][j]
@@ -231,7 +233,7 @@ class AI(object):
                     continue
                 for dx, dy in directions:
                     x = i + dx
-                    y = i + dy
+                    y = j + dy
                     flag = True
                     while 0 <= x < 8 and 0 <= y < 8:
                         if chessboard[x][y] != c:
@@ -243,4 +245,100 @@ class AI(object):
                         static_board[i][j] += c
         return self.color * np.sum(static_board)
 
+    def get_static(self, chessboard):
+        static_board = np.zeros((8, 8))
+        if chessboard[0][0] == 0 and chessboard[0][7] == 0 and chessboard[7][0] == 0 and chessboard[7][7] == 0:
+            return 0
+
+        if chessboard[0][0] != 0:
+            c = chessboard[0][0]
+            static_board[0][0] = c
+            for x in range(1, 7):
+                if c == chessboard[0][x]:
+                    static_board[0][x] = c
+                else:
+                    break
+            for x in range(1, 7):
+                if c == chessboard[x][0]:
+                    static_board[x][0] = c
+                else:
+                    break
+
+        if chessboard[0][7] != 0:
+            c = chessboard[0][7]
+            static_board[0][7] = c
+            for x in range(1, 7):
+                if c == chessboard[x][7]:
+                    static_board[x][7] = c
+                else:
+                    break
+            for x in range(1, 7):
+                if c == chessboard[0][7 - x]:
+                    static_board[0][7 - x] = c
+                else:
+                    break
+
+        if chessboard[7][0] != 0:
+            c = chessboard[7][0]
+            static_board[7][0] = c
+            for x in range(1, 7):
+                if c == chessboard[7][x]:
+                    static_board[7][x] = c
+                else:
+                    break
+            for x in range(1, 7):
+                if c == chessboard[7 - x][0]:
+                    static_board[7 - x][0] = c
+                else:
+                    break
+
+        if chessboard[7][7] != 0:
+            c = chessboard[7][7]
+            static_board[7][7] = c
+            for x in range(1, 7):
+                if c == chessboard[7][7 - x]:
+                    static_board[7][7 - x] = c
+                else:
+                    break
+            for x in range(1, 7):
+                if c == chessboard[7 - x][7]:
+                    static_board[7 - x][7] = c
+                else:
+                    break
+
+        for i in range(1, 7):
+            for j in range(1, 7):
+                c = chessboard[i][j]
+                if c == 0:
+                    continue
+                non_sta = False
+                for dx, dy in half_dirs:
+                    x = i + dx
+                    y = j + dy
+                    flag = False
+                    opposite = 0
+                    while 0 <= x < 8 and 0 <= y < 8:
+                        if chessboard[x][y] != c:
+                            opposite = chessboard[x][y]
+                            flag = True
+                            break
+                        x = x + dx
+                        y = y + dy
+                    if flag:
+                        x = i - dx
+                        y = j - dy
+                        while 0 <= x < 8 and 0 <= y < 8:
+                            if chessboard[x][y] != c:
+                                if chessboard[x][y] == opposite and opposite == -c:
+                                    break
+                                non_sta = True
+                                break
+                            x = x - dx
+                            y = y - dy
+                    if non_sta:
+                        break
+                if not non_sta:
+                    static_board[i][j] = c
+
+        return self.color * np.sum(static_board)
 
