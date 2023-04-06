@@ -8,7 +8,8 @@ COLOR_WHITE = 1
 COLOR_NONE = 0
 
 directions = [(0, -1), (0, 1), (-1, 0), (1, 0), (-1, -1), (-1, 1), (1, -1), (1, 1)]
-static_score = -4
+half_dirs = [(1, 0), (0, 1), (1, -1), (1, 1)]
+static_score = -3
 avai_score = -10
 STATIC_DEPTH = 32
 SWITCH_DEPTH = 5
@@ -39,14 +40,14 @@ pos_table = np.array([[-1, -1, -1, -1, -1, -1, -1, -1],
                       [-1, -1, -1, -1, -1, -1, -1, -1],
                       [-1, -1, -1, -1, -1, -1, -1, -1]])
 
-sample = np.array([[-200, 25, -100, -60, -60, -100, 25, -200],
+sample = np.array([[-300, 25, -100, -50, -50, -100, 25, -300],
                    [25, 45, -1, -1, -1, -1, 45, 25],
                    [-100, -1, -3, -2, -2, -3, -1, -100],
-                   [-60, -1, -2, -1, -1, -2, -1, -60],
-                   [-60, -1, -2, -1, -1, -2, -1, -60],
+                   [-50, -1, -2, -1, -1, -2, -1, -50],
+                   [-50, -1, -2, -1, -1, -2, -1, -50],
                    [-100, -1, -3, -2, -2, -3, -1, -100],
                    [25, 45, -1, -1, -1, -1, 45, 25],
-                   [-200, 25, -100, -60, -60, -100, 25, -200]])
+                   [-300, 25, -100, -50, -50, -100, 25, -300]])
 
 
 random.seed(0)
@@ -84,7 +85,7 @@ class AI(object):
         while True:
             _, spot, terminate = self.cal_max(chessboard, -1000000, 1000000, self.dep)
             if terminate or self.dep > self.REST:
-                # print("reach dep ", dep - 1)
+                # print("reach dep ", self.dep - 1)
                 break
             else:
                 if spot != (-1, -1):
@@ -214,12 +215,12 @@ class AI(object):
                 avi = len(self.get_spots(chessboard, -self.color))
             sta = 0
             # if self.REST < 64 - STATIC_DEPTH:
-            #     sta = self.get_static(chessboard, self.color)
+            #     sta = self.get_static(chessboard)
             return self.color * np.sum(chessboard * self.score_board_1) + avi * avai_score + sta * static_score
         else:
             return -self.color * np.sum(chessboard)
 
-    def get_static(self, chessboard, color):
+    def get_static(self, chessboard):
         static_board = np.zeros((8, 8))
         if chessboard[0][0] == 0 and chessboard[0][7] == 0 and chessboard[7][0] == 0 and chessboard[7][7] == 0:
             return 0
@@ -236,8 +237,8 @@ class AI(object):
                         if chessboard[x][y] != c:
                             flag = False
                             break
-                        x = i + dx
-                        y = i + dy
+                        x = x + dx
+                        y = y + dy
                     if flag:
                         static_board[i][j] += c
         return self.color * np.sum(static_board)
