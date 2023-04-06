@@ -8,8 +8,8 @@ COLOR_WHITE = 1
 COLOR_NONE = 0
 
 directions = [(0, -1), (0, 1), (-1, 0), (1, 0), (-1, -1), (-1, 1), (1, -1), (1, 1)]
-static_score = -10
-avai_score = -5
+static_score = -4
+avai_score = -10
 STATIC_DEPTH = 32
 SWITCH_DEPTH = 5
 score_table = np.array([[1, 8, 3, 7, 7, 3, 8, 1],
@@ -207,29 +207,39 @@ class AI(object):
 
     def get_score(self, chessboard):
         if self.REST > self.dep:
-            avi = len(self.get_spots(chessboard, -self.color))
+            avi = 0
+            if self.dep % 2 == 0:
+                avi = -len(self.get_spots(chessboard, self.color))
+            else:
+                avi = len(self.get_spots(chessboard, -self.color))
             sta = 0
             # if self.REST < 64 - STATIC_DEPTH:
             #     sta = self.get_static(chessboard, self.color)
-            return np.sum(self.color * chessboard * self.score_board_1) + avi * avai_score + sta * static_score
+            return self.color * np.sum(chessboard * self.score_board_1) + avi * avai_score + sta * static_score
         else:
-            return - (self.color * np.sum(chessboard))
+            return -self.color * np.sum(chessboard)
 
     def get_static(self, chessboard, color):
-        ans = 0
+        static_board = np.zeros((8, 8))
         if chessboard[0][0] == 0 and chessboard[0][7] == 0 and chessboard[7][0] == 0 and chessboard[7][7] == 0:
             return 0
-        if chessboard[0][0] != 0 and chessboard[0][7] != 0:
-            for i in range(8):
-                ans += chessboard[0][i]
-        if chessboard[0][0] != 0 and chessboard[7][0] != 0:
-            for i in range(8):
-                ans += chessboard[i][0]
-        if chessboard[7][0] != 0 and chessboard[7][7] != 0:
-            for i in range(8):
-                ans += chessboard[7][i]
-        if chessboard[0][7] != 0 and chessboard[7][7] != 0:
-            for i in range(8):
-                ans += chessboard[i][7]
+        for i in range(8):
+            for j in range(8):
+                c = chessboard[i][j]
+                if c == 0:
+                    continue
+                for dx, dy in directions:
+                    x = i + dx
+                    y = i + dy
+                    flag = True
+                    while 0 <= x < 8 and 0 <= y < 8:
+                        if chessboard[x][y] != c:
+                            flag = False
+                            break
+                        x = i + dx
+                        y = i + dy
+                    if flag:
+                        static_board[i][j] += c
+        return self.color * np.sum(static_board)
 
 
