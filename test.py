@@ -1,8 +1,9 @@
 import time
-now = time.time()
-print()
-for x in range(1, 6):
-    print(x)
-i = 0
-time.sleep(5)
-print(now - time.time())
+
+import numpy as np
+
+a = np.zeros((8, 8))
+b = np.array(a)
+b[1][2] = 5
+print(a)
+print(b)

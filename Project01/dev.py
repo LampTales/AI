@@ -11,7 +11,8 @@ directions = [(0, -1), (0, 1), (-1, 0), (1, 0), (-1, -1), (-1, 1), (1, -1), (1, 
 half_dirs = [(1, 0), (0, 1), (1, -1), (1, 1)]
 static_score_pre = -2
 static_score = -10
-avai_score = -15
+avai_score = -25
+chess_socre = -2
 STATIC_DEPTH = 32
 SWITCH_DEPTH = 5
 
@@ -24,14 +25,14 @@ pos_table = np.array([[-1, -1, -1, -1, -1, -1, -1, -1],
                       [-1, -1, -1, -1, -1, -1, -1, -1],
                       [-1, -1, -1, -1, -1, -1, -1, -1]])
 
-sample = np.array([[-200, 50, -100, -20, -20, -100, 50, -200],
-                   [50, -50, -1, -1, -1, -1, -50, 50],
-                   [-100, -1, -3, -2, -2, -3, -1, -100],
+sample = np.array([[-100, 50, -70, -20, -20, -70, 50, -100],
+                   [50, -10, -1, -1, -1, -1, -10, 50],
+                   [-70, -1, -3, -2, -2, -3, -1, -70],
                    [-20, -1, -2, -1, -1, -2, -1, -20],
                    [-20, -1, -2, -1, -1, -2, -1, -20],
-                   [-100, -1, -3, -2, -2, -3, -1, -100],
-                   [50, -50, -1, -1, -1, -1, -50, 50],
-                   [-200, 50, -100, -20, -20, -100, 50, -200]])
+                   [-70, -1, -3, -2, -2, -3, -1, -70],
+                   [50, -10, -1, -1, -1, -1, -10, 50],
+                   [-100, 50, -100, -20, -20, -100, 50, -100]])
 
 
 random.seed(0)
@@ -192,14 +193,22 @@ class AI(object):
 
     def get_score(self, chessboard):
         if self.REST > self.dep:
+            brd = 0
+            brd = self.color * np.sum(chessboard * self.score_board_1)
+
+            chs = 0
+            chs = self.color * np.sum(chessboard) * chess_socre
+
             avi = 0
             if self.dep % 2 == 0:
                 avi = -len(self.get_spots(chessboard, self.color))
             else:
                 avi = len(self.get_spots(chessboard, -self.color))
+
             sta = 0
-            sta = self.get_static_pre(chessboard)
-            return self.color * np.sum(chessboard * self.score_board_1) + avi * avai_score + sta * static_score_pre
+            sta = self.get_static(chessboard)
+
+            return brd + chs + avi * avai_score + sta * static_score
             # return  avi * avai_score + sta * static_score
         else:
             return -self.color * np.sum(chessboard)
@@ -221,7 +230,8 @@ class AI(object):
                     flag = True
                     while 0 <= x < 8 and 0 <= y < 8:
                         if chessboard[x][y] != c:
-                            flag = False
+                            if chessboard[x][y] == 0:
+                                flag = False
                             break
                         x = x + dx
                         y = y + dy
