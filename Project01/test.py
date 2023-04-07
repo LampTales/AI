@@ -1,5 +1,5 @@
 import numpy as np
-from dev import AI
+from nma import AI, get_score
 from Developping.main import judge, legal_left
 
 chessboard = np.zeros((8, 8), int)
@@ -22,7 +22,7 @@ while legal_left(chessboard):
         else:
             cur = p1
         continue
-    print("player color: " + str(cur.color) + " , choose spot: " + str(cur.candidate_list[-1]) + " , and get: " + str(cur.get_score(chessboard)))
+    print("player color: " + str(cur.color) + " , choose spot: " + str(cur.candidate_list[-1]) + " , and get: " + str(get_score(cur.REST, cur.dep, cur.color, chessboard)))
     print(chessboard)
     if cur == p1:
         cur = p2
