@@ -2,7 +2,7 @@ import numpy as np
 import random
 import queue
 import time
-from numba import njit, objmode
+from numba import njit
 
 COLOR_BLACK = -1
 COLOR_WHITE = 1
@@ -136,7 +136,7 @@ class AI(object):
                 break
             if total_max > alpha:
                 alpha = total_max
-            if time.time() - self.begin_time > self.time_out - 0.1:
+            if time.time() - self.begin_time > self.time_out - 0.2:
                 return total_max, total_spot, True
         return total_max, total_spot, False
 
@@ -156,7 +156,7 @@ class AI(object):
                 break
             if total_min < beta:
                 beta = total_min
-            if time.time() - self.begin_time > self.time_out - 0.1:
+            if time.time() - self.begin_time > self.time_out - 0.2:
                 return total_min, total_spot, True
         return total_min, total_spot, False
 
