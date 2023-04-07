@@ -6,48 +6,24 @@ import time
 COLOR_BLACK = -1
 COLOR_WHITE = 1
 COLOR_NONE = 0
+MODE = 0
 directions = [(0, -1), (0, 1), (-1, 0), (1, 0), (-1, -1), (-1, 1), (1, -1), (1, 1)]
 half_dirs = [(1, 0), (0, 1), (1, -1), (1, 1)]
-static_score_pre = -2
-static_score = -10
-avai_score = -15
+static_score_pre = -3
+static_score = -15
+avai_score = -20
+chess_socre = -10
 STATIC_DEPTH = 32
 SWITCH_DEPTH = 5
-score_table = np.array([[1, 8, 3, 7, 7, 3, 8, 1],
-                        [8, 3, 2, 5, 5, 2, 3, 8],
-                        [3, 2, 6, 6, 6, 6, 2, 3],
-                        [7, 5, 6, 4, 4, 6, 5, 7],
-                        [7, 5, 6, 4, 4, 6, 5, 7],
-                        [3, 2, 6, 6, 6, 6, 2, 3],
-                        [8, 3, 2, 5, 5, 2, 3, 8],
-                        [1, 8, 3, 7, 7, 3, 8, 1]])
 
-modify_table = np.array([[-100, -10, -20, -5, -5, -20, -10, -100],
-                         [-10, -10, -8, -5, -5, -8, -10, -10],
-                         [-20, -8, -4, -4, -4, -4, -8, -20],
-                         [-5, -5, -4, -6, -6, -5, -5, -5],
-                         [-5, -5, -4, -6, -6, -5, -5, -5],
-                         [-20, -8, -4, -4, -4, -4, -8, -20],
-                         [-10, -10, -8, -5, -5, -8, -10, -10],
-                         [-100, -10, -20, -5, -5, -20, -10, -100]])
-
-pos_table = np.array([[-1, -1, -1, -1, -1, -1, -1, -1],
-                      [-1, -1, -1, -1, -1, -1, -1, -1],
-                      [-1, -1, -1, -1, -1, -1, -1, -1],
-                      [-1, -1, -1, -1, -1, -1, -1, -1],
-                      [-1, -1, -1, -1, -1, -1, -1, -1],
-                      [-1, -1, -1, -1, -1, -1, -1, -1],
-                      [-1, -1, -1, -1, -1, -1, -1, -1],
-                      [-1, -1, -1, -1, -1, -1, -1, -1]])
-
-sample = np.array([[-200, 25, -100, -20, -20, -100, 25, -200],
-                   [25, 45, -1, -1, -1, -1, 45, 25],
-                   [-100, -1, -3, -2, -2, -3, -1, -100],
-                   [-20, -1, -2, -1, -1, -2, -1, -20],
-                   [-20, -1, -2, -1, -1, -2, -1, -20],
-                   [-100, -1, -3, -2, -2, -3, -1, -100],
-                   [25, 45, -1, -1, -1, -1, 45, 25],
-                   [-200, 25, -100, -20, -20, -100, 25, -200]])
+sample = np.array([[-100, 70, -40, -10, -10, -40, 50, -100],
+                   [70, 0, -1, -1, -1, -1, 0, 50],
+                   [-40, -1, -3, -2, -2, -3, -1, -40],
+                   [-10, -1, -2, -1, -1, -2, -1, -10],
+                   [-10, -1, -2, -1, -1, -2, -1, -10],
+                   [-40, -1, -3, -2, -2, -3, -1, -40],
+                   [50, 0, -1, -1, -1, -1, 0, 50],
+                   [-100, 50, -40, -10, -10, -40, 50, -100]])
 
 
 random.seed(0)
@@ -208,14 +184,23 @@ class AI(object):
 
     def get_score(self, chessboard):
         if self.REST > self.dep:
+            brd = 0
+            brd = self.color * np.sum(chessboard * self.score_board_1)
+
+            chs = 0
+            chs = self.color * np.sum(chessboard) * chess_socre
+
             avi = 0
             if self.dep % 2 == 0:
                 avi = -len(self.get_spots(chessboard, self.color))
             else:
                 avi = len(self.get_spots(chessboard, -self.color))
+
             sta = 0
-            sta = self.get_static_pre(chessboard)
-            return self.color * np.sum(chessboard * self.score_board_1) + avi * avai_score + sta * static_score_pre
+            sta = self.get_static(chessboard)
+
+            return brd + chs + avi * avai_score + sta * static_score
+            # return  avi * avai_score + sta * static_score
         else:
             return -self.color * np.sum(chessboard)
 
@@ -236,7 +221,8 @@ class AI(object):
                     flag = True
                     while 0 <= x < 8 and 0 <= y < 8:
                         if chessboard[x][y] != c:
-                            flag = False
+                            if chessboard[x][y] == 0:
+                                flag = False
                             break
                         x = x + dx
                         y = y + dy
