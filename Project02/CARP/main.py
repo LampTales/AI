@@ -13,7 +13,24 @@ def get_args():
     return args
 
 def read_data(data_path):
-    return None
+    file = open(data_path, 'r')
+    file.readline()
+    header = dict()
+    for _ in range(7):
+        line = file.readline()
+        data = line.split(':')
+        header[data[0].strip().lower()] = int(data[1].strip())
+    print(header)
+    file.readline()
+    line = file.readline()
+    while line.strip() != 'END':
+        data = line.split()
+        line = file.readline()
+
+class Node(object):
+    def __init__(self, node_id):
+        self.node_id = node_id
+        self.edge_list = []
 
 
 
@@ -22,7 +39,7 @@ def read_data(data_path):
 def main():
     args = get_args()
     print(args)
-    read_data(args.file_name)
+    read_data(args.file_path)
 
 
 if __name__ == "__main__":
