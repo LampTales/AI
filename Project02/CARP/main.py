@@ -27,7 +27,7 @@ def read_data(data_path):
     line = file.readline()
     while line.strip() != 'END':
         data = line.split()
-        edges.append(((int(data[0]), int(data[1])), int(data[2]), int(data[3])))
+        edges.append(((int(data[0]) - 1, int(data[1]) - 1), int(data[2]), int(data[3])))
         line = file.readline()
     # print(edges)
     return header, edges
@@ -40,11 +40,11 @@ def deal_edges(n, edges):
         matrix[i][i] = 0
     # load edges
     for edge in edges:
-        if edge[3] != 0:
+        if edge[2] != 0:
             clean_list.append(edge)
-        if matrix[edge[0][0]][edge[0][1]] > edge[2]:
-            matrix[edge[0][0]][edge[0][1]] = edge[2]
-            matrix[edge[0][1]][edge[0][0]] = edge[2]
+        if matrix[edge[0][0]][edge[0][1]] > edge[1]:
+            matrix[edge[0][0]][edge[0][1]] = edge[1]
+            matrix[edge[0][1]][edge[0][0]] = edge[1]
 
     distance = np.array(matrix)
     # do Floyd
@@ -56,25 +56,67 @@ def deal_edges(n, edges):
     return clean_list, matrix, distance
 
 
-def find_edge(cur, cur_cap, clean_list, distance):
-
-    return None
-
+def find_edge(cur, cur_cap, clean_list, distance, root, cap_des):
+    start = -1
+    select_index = -1
+    select_edge = None
+    min_cost = np.inf
+    for i in range(len(clean_list)):
+        edge = clean_list[i]
+        if cur_cap > edge[2]:
+            this_min, this_start = (distance[cur][edge[0][0]], edge[0][0]) \
+                if distance[cur][edge[0][0]] < distance[cur][edge[0][1]] \
+                else (distance[cur][edge[0][1]], edge[0][1])
+            if this_min < min_cost:
+                start, select_index, select_edge, min_cost = this_start, i, edge, this_min
+            elif this_min == min_cost:
+                if cap_des and distance[root][this_start] > distance[root][start]:
+                    start, select_index, select_edge, min_cost = this_start, i, edge, this_min
+                elif (not cap_des) and distance[root][this_start] < distance[root][start]:
+                    start, select_index, select_edge, min_cost = this_start, i, edge, this_min
+    return start, select_edge, select_index
 
 
 def main():
     args = get_args()
     print(args)
     header, edges = read_data(args.file_path)
-    n, root, cap, vehicles = header.get('vertices'), header.get('depot'), header.get('capacity'), header.get('vehicles')
+    n, root, cap, vehicles = header.get('vertices'), header.get('depot') - 1, header.get('capacity'), header.get('vehicles')
     clean_list, matrix, distance = deal_edges(n, edges)
+
     path_list = []
     while len(clean_list) != 0:
+        # for each path
         path = []
+        path_len = 0
         cur = root
         cur_cap = cap
-        edge = find_edge(cur, cur_cap, clean_list, distance)
+        while True:
+            start, edge, index = find_edge(cur, cur_cap, clean_list, distance, root, cur_cap > cap / 2)
+            if edge is None:
+                break
+            print(edge)
+            path.append((edge[0][0], edge[0][1]) if start == edge[0][0] else (edge[0][1], edge[0][0]))
+            path_len += distance[cur][start] + edge[1]
+            cur = path[-1][1]
+            cur_cap -= edge[2]
+            clean_list.pop(index)
+        path_len += distance[cur][root]
+        path_list.append((path, path_len))
 
+    print('s ', end='')
+    total_len = 0
+    path_cnt = 0
+    for path, path_len in path_list:
+        path_cnt += 1
+        total_len += path_len
+        print(0, end=',')
+        for edge in path:
+            print(edge, end=',')
+        print(0, end='') if path_cnt == len(path_list) else print(0, end=',')
+    print()
+    print('q ' + str(total_len))
+    return
 
 
 if __name__ == "__main__":
