@@ -1,7 +1,6 @@
 import argparse
+import time
 import numpy as np
-import sys
-import heapq
 
 
 def get_args():
@@ -63,7 +62,7 @@ def find_edge(cur, cur_cap, clean_list, distance, root, cap_des):
     min_cost = np.inf
     for i in range(len(clean_list)):
         edge = clean_list[i]
-        if cur_cap > edge[2]:
+        if cur_cap >= edge[2]:
             this_min, this_start = (distance[cur][edge[0][0]], edge[0][0]) \
                 if distance[cur][edge[0][0]] < distance[cur][edge[0][1]] \
                 else (distance[cur][edge[0][1]], edge[0][1])
@@ -78,6 +77,7 @@ def find_edge(cur, cur_cap, clean_list, distance, root, cap_des):
 
 
 def main():
+    time_start = time.time()
     args = get_args()
     print(args)
     header, edges = read_data(args.file_path)
@@ -95,7 +95,7 @@ def main():
             start, edge, index = find_edge(cur, cur_cap, clean_list, distance, root, cur_cap > cap / 2)
             if edge is None:
                 break
-            print(edge)
+            # print(edge)
             path.append((edge[0][0], edge[0][1]) if start == edge[0][0] else (edge[0][1], edge[0][0]))
             path_len += distance[cur][start] + edge[1]
             cur = path[-1][1]
@@ -104,6 +104,12 @@ def main():
         path_len += distance[cur][root]
         path_list.append((path, path_len))
 
+    path_list, _ = optimize(n, root, path_list, distance, matrix, time_start, args.termination)
+
+    time_end = time.time()
+    print("time taken: " + str(time_end - time_start))
+
+    # output
     print('s ', end='')
     total_len = 0
     path_cnt = 0
@@ -112,12 +118,32 @@ def main():
         total_len += path_len
         print(0, end=',')
         for edge in path:
-            print(edge, end=',')
+            print((edge[0] + 1, edge[1] + 1), end=',')
         print(0, end='') if path_cnt == len(path_list) else print(0, end=',')
     print()
     print('q ' + str(total_len))
+
+    time_end = time.time()
+    print("time taken: " + str(time_end - time_start))
+
     return
 
 
 if __name__ == "__main__":
     main()
+
+
+def cal_length(root, path, distance, matrix):
+    cur = root
+    length = 0
+    for edge in path:
+        length += distance[cur][edge[0]] + matrix
+
+
+def optimize(n, root, path_list, distance, matrix, time_start, time_limit):
+    select_path_list = path_list
+    total_len = np.inf
+    return select_path_list, total_len
+
+
+
