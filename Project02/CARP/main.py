@@ -129,21 +129,26 @@ def main():
     return
 
 
-if __name__ == "__main__":
-    main()
-
-
 def cal_length(root, path, distance, matrix):
     cur = root
     length = 0
     for edge in path:
-        length += distance[cur][edge[0]] + matrix
+        length += distance[cur][edge[0]] + matrix[edge[0]][edge[1]]
+        cur = edge[1]
+    length += distance[path[-1][1]][root]
+    return length
 
 
 def optimize(n, root, path_list, distance, matrix, time_start, time_limit):
     select_path_list = path_list
-    total_len = np.inf
+    total_len = 0
+    for path, path_len in path_list:
+        total_len += cal_length(root, path, distance, matrix)
     return select_path_list, total_len
+
+
+if __name__ == "__main__":
+    main()
 
 
 
