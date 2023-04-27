@@ -1,4 +1,5 @@
 import argparse
+import random
 import time
 import numpy as np
 
@@ -129,6 +130,12 @@ def main():
     return
 
 
+vary_rate = 0.1
+group_size = 200
+select_size = 5
+select_range = range(select_size)
+
+
 def cal_length(root, path, distance, matrix):
     cur = root
     length = 0
@@ -139,12 +146,79 @@ def cal_length(root, path, distance, matrix):
     return length
 
 
+def cal_total_length(path_list):
+    total = 0
+    for _, path_len in path_list:
+        total += path_len
+    return total
+
+
+def copy_list(path_list):
+    new_list = []
+    for path, path_len in path_list:
+        new_path = []
+        for edge in path:
+            new_path.append(edge)
+        new_list.append((new_path, path_len))
+    return new_list
+
+
+def generate(group):
+    raw_list = []
+    list1 = (random.choice(group))[1]
+    list2 = (random.choice(group))[1]
+    for i in range(len(list1)):
+        path = []
+        if random.random() < 0.5:
+            for edge in list1[i][0]:
+                path.append(edge)
+        else:
+            for edge in list2[i][0]:
+                path.append(edge)
+        raw_list.append(path)
+    return raw_list
+
+
+def vary(raw_list, root, distance, matrix):
+    com_list = []
+    for path in raw_list:
+        if random.random() < vary_rate:
+            if random.random() < 0.5:
+                # kind 1 vary
+                spot1 = random.choice(range(len(path)))
+                spot2 = random.choice(range(len(path)))
+                temp = path[spot1]
+                path[spot1] = path[spot2]
+                path[spot2] = temp
+            else:
+                # kind 2 vary
+                spot = random.choice(range(len(path)))
+                path[spot] = (path[spot][1], path[spot][0])
+        com_list.append((path, cal_length(root, path, distance, matrix)))
+    return com_list, cal_total_length(com_list)
+
+
 def optimize(n, root, path_list, distance, matrix, time_start, time_limit):
     select_path_list = path_list
-    total_len = 0
-    for path, path_len in path_list:
-        total_len += cal_length(root, path, distance, matrix)
-    return select_path_list, total_len
+    select_len = cal_total_length(path_list)
+
+    # init
+    group = []
+    for _ in range(group_size):
+        group.append((select_len, copy_list(select_path_list)))
+
+    while time.time() - time_start < time_limit - 10:
+        next_group = []
+        for _ in range(group_size):
+            new_list, total_len = vary(generate(group), root, distance, matrix)
+            next_group.append((total_len, new_list))
+        next_group.sort()
+        group = next_group[0:5]
+        select_path_list = group[0][1]
+        select_len = group[0][0]
+        print("round select len: " + str(select_len))
+
+    return select_path_list, select_len
 
 
 if __name__ == "__main__":
