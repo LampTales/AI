@@ -131,7 +131,7 @@ def main():
 
 
 vary_rate = 0.1
-group_size = 200
+group_size = 300
 select_size = 5
 select_range = range(select_size)
 
