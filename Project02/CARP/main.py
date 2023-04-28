@@ -131,7 +131,7 @@ def main():
 
 
 vary_rate = 0.1
-group_size = 300
+group_size = 500
 select_size = 5
 select_range = range(select_size)
 
@@ -182,18 +182,19 @@ def generate(group):
 def vary(raw_list, root, distance, matrix):
     com_list = []
     for path in raw_list:
-        if random.random() < vary_rate:
-            if random.random() < 0.5:
-                # kind 1 vary
-                spot1 = random.choice(range(len(path)))
-                spot2 = random.choice(range(len(path)))
-                temp = path[spot1]
-                path[spot1] = path[spot2]
-                path[spot2] = temp
-            else:
-                # kind 2 vary
-                spot = random.choice(range(len(path)))
-                path[spot] = (path[spot][1], path[spot][0])
+        for _ in range(len(path)):
+            if random.random() < vary_rate:
+                if random.random() < 0.5:
+                    # kind 1 vary
+                    spot1 = random.choice(range(len(path)))
+                    spot2 = random.choice(range(len(path)))
+                    temp = path[spot1]
+                    path[spot1] = path[spot2]
+                    path[spot2] = temp
+                else:
+                    # kind 2 vary
+                    spot = random.choice(range(len(path)))
+                    path[spot] = (path[spot][1], path[spot][0])
         com_list.append((path, cal_length(root, path, distance, matrix)))
     return com_list, cal_total_length(com_list)
 
@@ -207,8 +208,9 @@ def optimize(n, root, path_list, distance, matrix, time_start, time_limit):
     for _ in range(group_size):
         group.append((select_len, copy_list(select_path_list)))
 
-    while time.time() - time_start < time_limit - 10:
+    while time.time() - time_start < time_limit - 5:
         next_group = []
+        next_group.append(group[0])
         for _ in range(group_size):
             new_list, total_len = vary(generate(group), root, distance, matrix)
             next_group.append((total_len, new_list))
