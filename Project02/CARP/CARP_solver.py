@@ -80,7 +80,7 @@ def find_edge(cur, cur_cap, clean_list, distance, root, cap_des):
 def main():
     time_start = time.time()
     args = get_args()
-    print(args)
+    # print(args)
     header, edges = read_data(args.file_path)
     n, root, cap, vehicles = header.get('vertices'), header.get('depot') - 1, header.get('capacity'), header.get('vehicles')
     clean_list, matrix, distance = deal_edges(n, edges)
@@ -105,10 +105,10 @@ def main():
         path_len += distance[cur][root]
         path_list.append((path, path_len))
 
-    path_list, _ = optimize(n, root, path_list, distance, matrix, time_start, args.termination)
+    # path_list, _ = optimize(n, root, path_list, distance, matrix, time_start, args.termination)
 
     time_end = time.time()
-    print("time taken: " + str(time_end - time_start))
+    # print("time taken: " + str(time_end - time_start))
 
     # output
     print('s ', end='')
@@ -119,13 +119,14 @@ def main():
         total_len += path_len
         print(0, end=',')
         for edge in path:
-            print((edge[0] + 1, edge[1] + 1), end=',')
+            # print((edge[0] + 1, edge[1] + 1), end=',')
+            print('(' + str(int(edge[0] + 1)) + ',' + str(int(edge[1] + 1)) + ')', end=',')
         print(0, end='') if path_cnt == len(path_list) else print(0, end=',')
     print()
-    print('q ' + str(total_len))
+    print('q ' + str(int(total_len)))
 
     time_end = time.time()
-    print("time taken: " + str(time_end - time_start))
+    # print("time taken: " + str(time_end - time_start))
 
     return
 
@@ -208,7 +209,7 @@ def optimize(n, root, path_list, distance, matrix, time_start, time_limit):
     for _ in range(group_size):
         group.append((select_len, copy_list(select_path_list)))
 
-    while time.time() - time_start < time_limit - 5:
+    while time.time() - time_start < time_limit - 3:
         next_group = []
         next_group.append(group[0])
         for _ in range(group_size):
@@ -218,7 +219,7 @@ def optimize(n, root, path_list, distance, matrix, time_start, time_limit):
         group = next_group[0:5]
         select_path_list = group[0][1]
         select_len = group[0][0]
-        print("round select len: " + str(select_len))
+        # print("round select len: " + str(select_len))
 
     return select_path_list, select_len
 
