@@ -1,5 +1,5 @@
 import time
-
+import seaborn as sns; sns.set()
 import numpy as np
 
 a = []
