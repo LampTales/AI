@@ -12,7 +12,7 @@ def read_from_command():
     input_file_name = args.input_file.name
     termination = args.termination
     randomSeed = args.randomseed
-    print("----This is the read_from_command function of CARP_solver.py ----")
+    print("----This is the read_from_command function of post.py ----")
     print("Input file name: {}".format(input_file_name))
     print("Termination condition: {}".format(termination))
     print("Random seed: {}".format(randomSeed))
