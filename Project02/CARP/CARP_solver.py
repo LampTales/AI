@@ -85,6 +85,7 @@ def find_edge(cur, cur_cap, clean_list, distance, root, cap_des):
 def main():
     time_start = time.time()
     args = get_args()
+    random.seed(args.rand_seed)
     # print(args)
     header, edges = read_data(args.file_path)
     n, root, cap, vehicles = header.get('vertices'), header.get('depot') - 1, header.get('capacity'), header.get(
@@ -266,11 +267,11 @@ def vary(path_list):
     return new_list
 
 
-group_size = 200
+group_size = 300
 
-select_size = 10
-local_times = 150
-static_bare = np.inf
+select_size = 8
+local_times = 160
+static_bare = 6
 group_range = range(group_size)
 select_range = range(select_size)
 
@@ -340,7 +341,7 @@ def annealing(n, root, path_list, distance, matrix, times, demand, cap):
 
 
 def merge_spilt(n, root, path_list, distance, matrix, demand, cap):
-    ms_select = random.sample(range(len(path_list)), random.choice(range(len(path_list))))
+    ms_select = random.sample(range(len(path_list)), random.choice(range(len(path_list))) + 1)
     clean_list = []
     ms_path_list = []
     for i in range(len(path_list)):
@@ -356,7 +357,7 @@ def merge_spilt(n, root, path_list, distance, matrix, demand, cap):
         cur = root
         cur_cap = cap
         while True:
-            start, edge, index = ms_find(cur, cur_cap, clean_list, distance, demand, root, cur_cap > cap / 2)
+            start, edge, index = ms_find_rand(cur, cur_cap, clean_list, distance, demand, root, cur_cap > cap / 2)
             if edge is None:
                 break
             path.append(edge)
@@ -389,6 +390,31 @@ def ms_find(cur, cur_cap, clean_list, distance, demand, root, cap_des):
                 elif (not cap_des) and distance[root][this_start] < distance[root][start]:
                     start, select_index, select_edge, min_cost = this_start, i, edge, this_min
     return start, select_edge, select_index
+
+
+def ms_find_rand(cur, cur_cap, clean_list, distance, demand, root, cap_des):
+    start = -1
+    select_index = -1
+    select_edge_list = []
+    min_cost = np.inf
+    for i in range(len(clean_list)):
+        edge = clean_list[i]
+        if cur_cap >= demand[edge[0]][edge[1]]:
+            this_min, this_start = (distance[cur][edge[0]], edge[0]) \
+                if distance[cur][edge[0]] < distance[cur][edge[1]] \
+                else (distance[cur][edge[1]], edge[1])
+            if this_min < min_cost:
+                select_edge_list = [(edge, i)]
+                min_cost = this_min
+            elif this_min == min_cost:
+                select_edge_list.append((edge, i))
+    if len(select_edge_list) == 0:
+        return start, None, select_index
+    else:
+        edge, index = random.choice(select_edge_list)
+        return edge[0], edge, index
+
+
 
 
 if __name__ == "__main__":
