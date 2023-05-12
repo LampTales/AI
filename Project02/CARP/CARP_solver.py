@@ -111,8 +111,7 @@ def main():
         path_len += distance[cur][root]
         path_list.append((path, path_len))
 
-    # path_list, _ = optimize(n, root, path_list, distance, matrix, time_start, args.termination, demand)
-    path_list = annealing(n, root, path_list, distance, matrix, time_start, args.termination, demand, cap)
+    path_list, _ = optimize(n, root, path_list, distance, matrix, time_start, args.termination, demand, cap)
 
     # test_list = [([(1, 8), (8, 3), (3, 2), (2, 1), (1, 9), (9, 3), (3, 4), (4, 11)], 0),
     #              ([(1, 10), (10, 9), (9, 8), (8, 12), (12, 10), (12, 11), (11, 1)], 0),
@@ -140,12 +139,6 @@ def main():
     # print("time taken: " + str(time_end - time_start))
 
     return
-
-
-vary_rate = 0.1
-group_size = 1000
-select_size = 5
-select_range = range(select_size)
 
 
 def cal_length(path, root, distance, matrix):
@@ -261,6 +254,7 @@ def vary(path_list):
         else:
             (new_list[pos2[0]][0])[pos2[1]] = temp
 
+    #
     elif opcode == 3:
         path = new_list[random.choice(range(len(new_list)))][0]
         op_len = random.choice(range(len(path))) + 1
@@ -272,35 +266,68 @@ def vary(path_list):
     return new_list
 
 
-def optimize(n, root, path_list, distance, matrix, time_start, time_limit, demand):
+group_size = 200
+
+select_size = 10
+local_times = 150
+static_bare = np.inf
+group_range = range(group_size)
+select_range = range(select_size)
+
+
+def optimize(n, root, path_list, distance, matrix, time_start, time_limit, demand, cap):
     select_path_list = path_list
     select_len = cal_total_length(path_list, root, distance, matrix)
 
     # init
-    # group = []
-    # for _ in range(group_size):
-    #     group.append((select_len, copy_list(select_path_list)))
-    #
-    # while time.time() - time_start < time_limit - 5:
-    #     next_group = []
-    #     next_group.append(group[0])
-    #     for _ in range(group_size):
-    #         new_list, total_len = vary(generate(group), root, distance, matrix)
-    #         next_group.append((total_len, new_list))
-    #     next_group.sort()
-    #     group = next_group[0:5]
-    #     select_path_list = group[0][1]
-    #     select_len = group[0][0]
-    # print("round select len: " + str(select_len))
+    group = []
+    for _ in select_range:
+        group.append((select_len, copy_list(select_path_list)))
 
-    return select_path_list, select_len
+    change_cnt = 0
+    outer_path_list = select_path_list
+    outer_length = select_len
+
+    while time.time() - time_start < time_limit - 6:
+        # round_start = time.time()
+
+        next_group = []
+        if change_cnt >= static_bare:
+            # print("ms trigger")
+            change_cnt = 0
+            for i in select_range:
+                ms_list, ms_len = merge_spilt(n, root, group[i][1], distance, matrix, demand, cap)
+                next_group.append((ms_len, ms_list))
+            group = next_group
+            continue
+
+        for i in group_range:
+            new_list, total_len = annealing(n, root, copy_list(group[i % select_size][1]), distance, matrix, local_times, demand, cap)
+            next_group.append((total_len, new_list))
+        next_group.sort()
+        group = next_group[0:select_size]
+        select_path_list = group[0][1]
+        if select_len > group[0][0]:
+            change_cnt = 0
+        else:
+            change_cnt += 1
+        select_len = group[0][0]
+
+        if select_len < outer_length:
+            outer_path_list = select_path_list
+            outer_length = select_len
+
+        # print("round select len: " + str(select_len) + "   outer len: " + str(outer_length))
+        # print(time.time() - round_start)
+
+    return outer_path_list, outer_length
 
 
-def annealing(n, root, path_list, distance, matrix, time_start, time_limit, demand, cap):
+def annealing(n, root, path_list, distance, matrix, times, demand, cap):
     select_path_list = path_list
     select_len = cal_total_length(path_list, root, distance, matrix)
 
-    while time.time() - time_start < time_limit - 3:
+    for i in range(times):
         new_list = vary(select_path_list)
         if (new_list is not None) and legal(new_list, demand, cap):
             new_len = cal_total_length(new_list, root, distance, matrix)
@@ -309,7 +336,59 @@ def annealing(n, root, path_list, distance, matrix, time_start, time_limit, dema
                 select_len = new_len
                 # print("update with length" + str(select_len))
 
-    return select_path_list
+    return select_path_list, select_len
+
+
+def merge_spilt(n, root, path_list, distance, matrix, demand, cap):
+    ms_select = random.sample(range(len(path_list)), random.choice(range(len(path_list))))
+    clean_list = []
+    ms_path_list = []
+    for i in range(len(path_list)):
+        if i in ms_select:
+            for edge in path_list[i][0]:
+                clean_list.append(edge)
+        else:
+            ms_path_list.append(path_list[i])
+
+    while len(clean_list) != 0:
+        path = []
+        path_len = 0
+        cur = root
+        cur_cap = cap
+        while True:
+            start, edge, index = ms_find(cur, cur_cap, clean_list, distance, demand, root, cur_cap > cap / 2)
+            if edge is None:
+                break
+            path.append(edge)
+            path_len += distance[cur][edge[0]] + matrix[edge[0]][edge[1]]
+            cur = edge[1]
+            cur_cap -= demand[edge[0]][edge[1]]
+            clean_list.pop(index)
+        path_len += distance[cur][root]
+        ms_path_list.append((path, path_len))
+
+    return ms_path_list, cal_total_length(ms_path_list, root, distance, matrix)
+
+
+def ms_find(cur, cur_cap, clean_list, distance, demand, root, cap_des):
+    start = -1
+    select_index = -1
+    select_edge = None
+    min_cost = np.inf
+    for i in range(len(clean_list)):
+        edge = clean_list[i]
+        if cur_cap >= demand[edge[0]][edge[1]]:
+            this_min, this_start = (distance[cur][edge[0]], edge[0]) \
+                if distance[cur][edge[0]] < distance[cur][edge[1]] \
+                else (distance[cur][edge[1]], edge[1])
+            if this_min < min_cost:
+                start, select_index, select_edge, min_cost = this_start, i, edge, this_min
+            elif this_min == min_cost:
+                if cap_des and distance[root][this_start] > distance[root][start]:
+                    start, select_index, select_edge, min_cost = this_start, i, edge, this_min
+                elif (not cap_des) and distance[root][this_start] < distance[root][start]:
+                    start, select_index, select_edge, min_cost = this_start, i, edge, this_min
+    return start, select_edge, select_index
 
 
 if __name__ == "__main__":
