@@ -7,6 +7,7 @@ from sklearn.preprocessing import LabelEncoder
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score
 from sklearn.metrics import precision_score
+from sklearn.model_selection import GridSearchCV
 from imblearn.over_sampling import SMOTE
 from imblearn.over_sampling import RandomOverSampler
 
@@ -21,6 +22,12 @@ from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import RandomForestClassifier
 from xgboost import XGBClassifier
 from sklearn import tree
+
+# import nn models
+from sklearn.neural_network import MLPClassifier
+import torch.nn as nn
+import torch.nn.functional as F
+from torch import optim
 
 
 def write_data_frame_to_file(data, file_name="test.txt"):
@@ -99,8 +106,8 @@ def do_regression(X_train, X_test, y_train, y_test, do_evaluation=True):
 
 
 # svm part
-def do_svm(X_train, X_test, y_train, y_test, do_evaluation=True):
-    clf = svm.SVC()
+def do_svm(X_train, X_test, y_train, y_test, C=1, do_evaluation=True):
+    clf = svm.SVC(C=C)
     clf.fit(X_train, y_train.values.ravel())
 
     y_pred = clf.predict(X_test)
@@ -145,12 +152,49 @@ def do_xgboost(X_train, X_test, y_train, y_test, depth=6, estimators=100, learni
     return clf, accuracy
 
 
-def do_net(X_train, X_test, y_train, y_test, do_evaluation=True):
+def do_sk_net(X_train, X_test, y_train, y_test, print_net_info=False, do_evaluation=True):
+    clf = MLPClassifier(solver='adam', activation='relu', tol=1e-5, hidden_layer_sizes=(100, ), max_iter=2000, verbose=print_net_info)
+    clf.fit(X_train, y_train.values.ravel())
+
+    if print_net_info:
+        print(clf.n_layers_)
+        print(clf.n_iter_)
+        print(clf.loss_)
+        print(clf.out_activation_)
+
+    y_pred = clf.predict(X_test)
+    accuracy = evaluate(y_test, y_pred, do_evaluation)
+
+    return clf, accuracy
+
+
+class Net(nn.Module):
+    def __init__(self, features):
+        super(Net, self).__init__()
+        self.fc1 = nn.Linear(features, 200)
+        self.fc2 = nn.Linear(200, 200)
+        self.fc3 = nn.Linear(200, 20)
+        self.fc4 = nn.Linear(20, 2)
+
+    def forward(self, x):
+        x = F.relu(self.fc1(x))
+        x = F.relu(self.fc2(x))
+        x = F.relu(self.fc3(x))
+        x = F.relu(self.fc4(x))
+        return F.sigmoid(x)
+
+
+def do_sf_net(X_train, X_test, y_train, y_test, print_net_info=False, do_evaluation=True):
+    net = Net(X_train.shape[1])
+    # print(net)
+    optimizer = optim.Adam(net.parameters(), lr=0.001)
+    criterion = nn.BCELoss()
     return None
 
 
+
 def main():
-    use_self_encode = True
+    use_self_encode = False
     use_imblearn = False
     use_smote = False
 
@@ -175,12 +219,16 @@ def main():
     # clf, acc = do_regression(X_train, X_test, y_train, y_test)
 
     # svm part
-    clf, acc = do_svm(X_train, X_test, y_train, y_test)
+    # clf, acc = do_svm(X_train, X_test, y_train, y_test, C=10)
 
     # tree part
     # clf, acc = do_tree(X_train, X_test, y_train, y_test, depth=7, print_tree=False)
     # clf, acc = do_forest(X_train, X_test, y_train, y_test)
     # clf, acc = do_xgboost(X_train, X_test, y_train, y_test)
+
+    # nn part
+    # clf, acc = do_sk_net(X_train, X_test, y_train, y_test, print_net_info=True)
+    do_sf_net(X_train, X_test, y_train, y_test)
 
     # multiple test
     # avg_acc = 0
@@ -196,7 +244,8 @@ def main():
     #
     #     # clf, acc = do_tree(X_train, X_test, y_train, y_test, depth=7, print_tree=False)
     #     # clf, acc = do_forest(X_train, X_test, y_train, y_test, depth=None, estimators=100)
-    #     clf, acc = do_xgboost(X_train, X_test, y_train, y_test)
+    #     # clf, acc = do_xgboost(X_train, X_test, y_train, y_test)
+    #     clf, acc = do_svm(X_train, X_test, y_train, y_test)
     #
     #     avg_acc += acc
     # print("avg_acc: ", avg_acc / 30)
